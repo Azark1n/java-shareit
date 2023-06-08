@@ -81,6 +81,11 @@
 				<artifactId>maven-site-plugin</artifactId>
 				<version>3.11.0</version>
 			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-resources-plugin</artifactId>
+				<version>3.0.2</version>
+			</plugin>
 		</plugins>
 		<pluginManagement>
 			<plugins>
@@ -115,7 +120,6 @@
 						<dependency>
 							<groupId>com.puppycrawl.tools</groupId>
 							<artifactId>checkstyle</artifactId>
-							<version>10.9.1</version>
 						</dependency>
 					</dependencies>
 				</plugin>
