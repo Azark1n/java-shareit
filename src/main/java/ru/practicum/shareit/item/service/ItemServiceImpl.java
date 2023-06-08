@@ -20,7 +20,7 @@ import java.util.List;
 @Data
 @RequiredArgsConstructor
 @Service
-public class ItemServiceImpl implements ItemService{
+public class ItemServiceImpl implements ItemService {
     private final ItemRepository repository;
     private final UserRepository userRepository;
 
