@@ -35,7 +35,7 @@ public class InMemoryUserRepository implements UserRepository {
     @Override
     public Optional<User> getByEmail(String email) {
         return map.values().stream()
-                .filter(user -> user.getEmail().equals(email))
+                .filter(user -> Objects.equals(user.getEmail(), email))
                 .findFirst();
     }
 
@@ -48,6 +48,11 @@ public class InMemoryUserRepository implements UserRepository {
 
     @Override
     public boolean deleteById(int id) {
-        return map.remove(id) != null;
+        if (map.containsKey(id)) {
+            map.remove(id);
+            return true;
+        } else {
+            return false;
+        }
     }
 }
