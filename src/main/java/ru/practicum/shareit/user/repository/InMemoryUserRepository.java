@@ -48,11 +48,9 @@ public class InMemoryUserRepository implements UserRepository {
 
     @Override
     public boolean deleteById(int id) {
-        if (map.containsKey(id)) {
-            map.remove(id);
-            return true;
-        } else {
-            return false;
-        }
+        boolean existed = map.containsKey(id);
+        map.remove(id);
+
+        return existed;
     }
 }
