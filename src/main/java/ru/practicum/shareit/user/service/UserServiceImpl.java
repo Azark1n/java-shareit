@@ -5,7 +5,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
-import ru.practicum.shareit.exception.AlreadyExistException;
 import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.user.User;
 import ru.practicum.shareit.user.repository.UserRepository;
@@ -24,40 +23,41 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User create(@Valid User user) {
-        if (repository.getByEmail(user.getEmail()).isPresent()) {
-            throw new AlreadyExistException(String.format("User with email %s already exist", user.getEmail()));
-        }
         log.info(String.format("Create user: %s", user));
 
-        return repository.create(user);
+        return repository.save(user);
     }
 
     @Override
     public List<User> getAll() {
-        return repository.getAll();
+        return repository.findAll();
     }
 
     @Override
     public User getByIdOrThrow(int id) {
-        return repository.getById(id).orElseThrow(() -> new NotFoundException(String.format("User with id %d not found", id)));
+        return repository.findById(id).orElseThrow(() -> new NotFoundException(String.format("User with id %d not found", id)));
+    }
+
+    @Override
+    public Optional<User> getById(int id) {
+        return repository.findById(id);
     }
 
     @Override
     public User update(@Valid User user) {
-        if (repository.getById(user.getId()).isEmpty()) {
+        if (repository.findById(user.getId()).isEmpty()) {
             throw new NotFoundException(String.format("User with id %d not found", user.getId()));
-        }
-        Optional<User> byEmail = repository.getByEmail(user.getEmail());
-        if (byEmail.isPresent() && byEmail.get().getId() != user.getId()) {
-            throw new AlreadyExistException(String.format("User with email %s already exist", user.getEmail()));
         }
         log.info(String.format("Update user: %s", user));
 
-        return repository.update(user);
+        return repository.save(user);
     }
 
     @Override
     public boolean deleteById(int id) {
-        return repository.deleteById(id);
+        boolean exist = repository.findById(id).isPresent();
+        repository.deleteById(id);
+
+        return exist;
     }
 }

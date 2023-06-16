@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
+import ru.practicum.shareit.exception.BadRequestException;
 import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.item.Item;
 import ru.practicum.shareit.item.repository.ItemRepository;
@@ -14,6 +15,7 @@ import ru.practicum.shareit.user.repository.UserRepository;
 import javax.validation.Valid;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Validated
@@ -26,29 +28,42 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public Item create(@Valid Item item) {
-        if (userRepository.getById(item.getOwner().getId()).isEmpty()) {
+        if (userRepository.findById(item.getOwner().getId()).isEmpty()) {
             throw new NotFoundException(String.format("User with id %d not found", item.getOwner().getId()));
         }
         log.info(String.format("Create item: %s", item));
 
-        return repository.create(item);
+        return repository.save(item);
+    }
+
+    @Override
+    public Optional<Item> getById(int id) {
+        return repository.findById(id);
     }
 
     @Override
     public Item getByIdOrThrow(int id) {
-        return repository.getById(id).orElseThrow(() -> new NotFoundException(String.format("Item with id %d not found", id)));
+        return repository.findById(id)
+                .orElseThrow(() -> new NotFoundException(String.format("Item with id=%d not found", id)));
+    }
+
+    @Override
+    public Item getByIdAvailableForBookingOrThrow(int id) {
+        return repository.findByIdAndAvailable(id, true)
+                .orElseThrow(() -> new BadRequestException(
+                        String.format("Item with id=%d unavailable for booking", id)));
     }
 
     @Override
     public Item update(Item item) {
         log.info(String.format("Update item: %s", item.toString()));
 
-        return repository.update(item);
+        return repository.save(item);
     }
 
     @Override
     public List<Item> getAllByUser(User user) {
-        return repository.getAllByUser(user);
+        return repository.findByOwner(user);
     }
 
     @Override
@@ -57,6 +72,6 @@ public class ItemServiceImpl implements ItemService {
             return new ArrayList<>();
         }
 
-        return repository.search(text);
+        return repository.findByNameLikeIgnoreCaseOrDescriptionLikeIgnoreCase(text);
     }
 }

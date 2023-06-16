@@ -6,5 +6,5 @@ import lombok.Value;
 @Value
 @AllArgsConstructor
 public class ErrorMessage {
-    String message;
+    String error;
 }

@@ -9,6 +9,7 @@ import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.dto.ItemMapper;
 import ru.practicum.shareit.item.service.ItemService;
 import ru.practicum.shareit.user.User;
+import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.service.UserService;
 
 import javax.validation.Valid;
@@ -26,7 +27,7 @@ public class ItemController {
     private static final String USER_ID_HEADER = "X-Sharer-User-Id";
 
     @PostMapping
-    public Item create(@RequestHeader(USER_ID_HEADER) @NotNull int userId, @Valid @RequestBody ItemDto itemDto) {
+    public Item create(@RequestHeader(USER_ID_HEADER) @NotNull int userId, @Validated(ItemDto.Create.class) @RequestBody ItemDto itemDto) {
         User owner = userService.getByIdOrThrow(userId);
 
         return service.create(ItemMapper.toModel(owner, itemDto));
