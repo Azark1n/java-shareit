@@ -2,11 +2,7 @@ package ru.practicum.shareit.exception;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.engine.jdbc.spi.SqlExceptionHelper;
-import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -14,7 +10,6 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import javax.validation.ConstraintViolationException;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -22,8 +17,6 @@ import java.util.Map;
 @RequiredArgsConstructor
 @RestControllerAdvice
 public class ErrorHandlingControllerAdvice {
-//    private final SqlExceptionHelper sqlExceptionHelper;
-    private final JdbcTemplate jdbcTemplate;
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)

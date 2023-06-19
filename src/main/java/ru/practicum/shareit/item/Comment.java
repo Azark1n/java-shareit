@@ -9,34 +9,31 @@ import ru.practicum.shareit.user.User;
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
 @Builder(toBuilder = true)
-@Table(name = "items")
-public class Item {
+@Table(name = "comments")
+public class Comment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     int id;
 
     @NotNull
     @NotBlank
-    String name;
-
-    @NotNull
-    @NotBlank
-    String description;
-
-    @NotNull
-    @Column(name = "is_available")
-    Boolean available;
+    String text;
 
     @NotNull
     @ManyToOne
-    User owner;
+    Item item;
 
-    //ItemRequest request;
+    @NotNull
+    @ManyToOne
+    User author;
+
+    @NotNull
+    LocalDateTime created;
 }
-

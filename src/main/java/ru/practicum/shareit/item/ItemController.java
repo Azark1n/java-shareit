@@ -4,18 +4,24 @@ import lombok.RequiredArgsConstructor;
 import lombok.Value;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import ru.practicum.shareit.booking.Booking;
+import ru.practicum.shareit.booking.BookingStatus;
+import ru.practicum.shareit.booking.service.BookingService;
+import ru.practicum.shareit.exception.BadRequestException;
 import ru.practicum.shareit.exception.ForbiddenException;
-import ru.practicum.shareit.item.dto.ItemDto;
-import ru.practicum.shareit.item.dto.ItemMapper;
+import ru.practicum.shareit.exception.NotFoundException;
+import ru.practicum.shareit.item.dto.*;
 import ru.practicum.shareit.item.service.ItemService;
 import ru.practicum.shareit.user.User;
-import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.service.UserService;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Value
 @RequiredArgsConstructor
@@ -24,17 +30,18 @@ import java.util.Map;
 public class ItemController {
     ItemService service;
     UserService userService;
+    BookingService bookingService;
     private static final String USER_ID_HEADER = "X-Sharer-User-Id";
 
     @PostMapping
-    public Item create(@RequestHeader(USER_ID_HEADER) @NotNull int userId, @Validated(ItemDto.Create.class) @RequestBody ItemDto itemDto) {
+    public Item create(@RequestHeader(USER_ID_HEADER) @NotNull int userId, @Validated(ItemInDto.Create.class) @RequestBody ItemInDto itemInDto) {
         User owner = userService.getByIdOrThrow(userId);
 
-        return service.create(ItemMapper.toModel(owner, itemDto));
+        return service.create(ItemMapper.toModel(owner, itemInDto));
     }
 
     @PatchMapping("/{id}")
-    public Item patch(@RequestHeader(USER_ID_HEADER) @NotNull int userId, @PathVariable int id, @Validated(ItemDto.Create.class) @RequestBody Map<String,Object> patchValues) {
+    public Item patch(@RequestHeader(USER_ID_HEADER) @NotNull int userId, @PathVariable int id, @Validated(ItemInDto.Create.class) @RequestBody Map<String, Object> patchValues) {
         User owner = userService.getByIdOrThrow(userId);
         Item item = service.getByIdOrThrow(id);
 
@@ -48,16 +55,47 @@ public class ItemController {
     }
 
     @GetMapping("/{id}")
-    public Item getById(@RequestHeader(USER_ID_HEADER) @NotNull int userId, @PathVariable int id) {
-        userService.getByIdOrThrow(userId);
-        return service.getByIdOrThrow(id);
+    public ItemOutDto getById(@RequestHeader(USER_ID_HEADER) @NotNull int userId, @PathVariable int id) {
+        User owner = userService.getById(userId).orElseThrow(() -> new NotFoundException(String.format(
+                "User with id=%d not found", userId)));
+        Item item = service.getById(id).orElseThrow(() -> new NotFoundException(String.format(
+                "Item with id=%d not found", id)));
+        Booking lastBooking = bookingService.getLastBooking(item, owner);
+        Booking nextBooking = bookingService.getNextBooking(item, owner);
+        List<Comment> comments = service.getComments(item);
+
+        return ItemMapper.toDto(item, lastBooking, nextBooking, comments);
+    }
+
+    @PostMapping("/{id}/comment")
+    public CommentOutDto createComment(@RequestHeader(USER_ID_HEADER) @NotNull int userId, @PathVariable int id,
+                                       @RequestBody @Valid CommentInDto commentInDto) {
+        User booker = userService.getById(userId).orElseThrow(() -> new NotFoundException(String.format(
+                "User with id=%d not found", userId)));
+        Optional<Booking> optionalBooking = bookingService.getById(id);
+        if (optionalBooking.isEmpty() || !Objects.equals(optionalBooking.get().getBooker(), booker)
+                || !BookingStatus.APPROVED.equals(optionalBooking.get().getStatus())) {
+            throw new BadRequestException(String.format("Can't create comment for booking id=%d and user id=%d",
+                    id, userId));
+        }
+        Comment comment = service.createComment(CommentMapper.toModel(commentInDto, booker, optionalBooking.get().getItem()));
+
+        return CommentMapper.toDto(comment);
     }
 
     @GetMapping
-    public List<Item> getAllByUser(@RequestHeader(USER_ID_HEADER) @NotNull int userId) {
+    public List<ItemOutDto> getAllByUser(@RequestHeader(USER_ID_HEADER) @NotNull int userId) {
         User owner = userService.getByIdOrThrow(userId);
 
-        return service.getAllByUser(owner);
+        List<Item> items = service.getAllByUser(owner);
+
+        return items.stream()
+                .map(item -> {
+                    List<Comment> comments = service.getComments(item);
+                    return ItemMapper.toDto(item, bookingService.getLastBooking(item, owner),
+                            bookingService.getNextBooking(item, owner), comments);
+                })
+                .collect(Collectors.toList());
     }
 
     @GetMapping("/search")

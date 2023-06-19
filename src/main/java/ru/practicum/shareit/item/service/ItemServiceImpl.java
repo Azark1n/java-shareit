@@ -7,7 +7,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 import ru.practicum.shareit.exception.BadRequestException;
 import ru.practicum.shareit.exception.NotFoundException;
+import ru.practicum.shareit.item.Comment;
 import ru.practicum.shareit.item.Item;
+import ru.practicum.shareit.item.repository.CommentRepository;
 import ru.practicum.shareit.item.repository.ItemRepository;
 import ru.practicum.shareit.user.User;
 import ru.practicum.shareit.user.repository.UserRepository;
@@ -25,6 +27,7 @@ import java.util.Optional;
 public class ItemServiceImpl implements ItemService {
     private final ItemRepository repository;
     private final UserRepository userRepository;
+    private final CommentRepository commentRepository;
 
     @Override
     public Item create(@Valid Item item) {
@@ -63,7 +66,7 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public List<Item> getAllByUser(User user) {
-        return repository.findByOwner(user);
+        return repository.findByOwnerOrderById(user);
     }
 
     @Override
@@ -73,5 +76,17 @@ public class ItemServiceImpl implements ItemService {
         }
 
         return repository.findByNameLikeIgnoreCaseOrDescriptionLikeIgnoreCase(text);
+    }
+
+    @Override
+    public List<Comment> getComments(Item item) {
+        return commentRepository.findByItemOrderByCreatedDesc(item);
+    }
+
+    @Override
+    public Comment createComment(Comment comment) {
+        log.info(String.format("Create comment %s", comment));
+
+        return commentRepository.save(comment);
     }
 }

@@ -1,12 +1,17 @@
 package ru.practicum.shareit.item.dto;
 
 import lombok.extern.slf4j.Slf4j;
+import ru.practicum.shareit.booking.Booking;
+import ru.practicum.shareit.booking.dto.BookingMapper;
 import ru.practicum.shareit.exception.BadRequestException;
+import ru.practicum.shareit.item.Comment;
 import ru.practicum.shareit.item.Item;
 import ru.practicum.shareit.user.User;
 
 import java.lang.reflect.Field;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class ItemMapper {
@@ -14,19 +19,27 @@ public class ItemMapper {
         throw new IllegalStateException("Utility class");
     }
 
-    public static ItemDto toDto(Item item) {
-        return ItemDto.builder()
+    public static ItemOutDto toDto(Item item, Booking lastBooking, Booking nextBooking, List<Comment> comments) {
+        ItemOutDto.ItemOutDtoBuilder itemOutDtoBuilder = ItemOutDto.builder()
+                .id(item.getId())
                 .name(item.getName())
                 .description(item.getDescription())
                 .available(item.getAvailable())
-                .build();
+                .comments(comments.stream().map(CommentMapper::toDto).collect(Collectors.toList()));
+        if (lastBooking != null) {
+            itemOutDtoBuilder = itemOutDtoBuilder.lastBooking(BookingMapper.toShortDto(lastBooking));
+        }
+        if (nextBooking != null) {
+            itemOutDtoBuilder = itemOutDtoBuilder.nextBooking(BookingMapper.toShortDto(nextBooking));
+        }
+        return itemOutDtoBuilder.build();
     }
 
-    public static Item toModel(User owner, ItemDto itemDto) {
+    public static Item toModel(User owner, ItemInDto itemInDto) {
         return Item.builder()
-                .name(itemDto.getName())
-                .description(itemDto.getDescription())
-                .available(itemDto.getAvailable())
+                .name(itemInDto.getName())
+                .description(itemInDto.getDescription())
+                .available(itemInDto.getAvailable())
                 .owner(owner)
                 .build();
     }

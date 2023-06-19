@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.Value;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import ru.practicum.shareit.booking.dto.BookingDto;
+import ru.practicum.shareit.booking.dto.BookingInDto;
 import ru.practicum.shareit.booking.dto.BookingMapper;
 import ru.practicum.shareit.booking.service.BookingService;
 import ru.practicum.shareit.exception.BadRequestException;
@@ -34,21 +34,28 @@ public class BookingController {
 
     @PostMapping
     public Booking create(@RequestHeader(USER_ID_HEADER) @NotNull int userId,
-                          @Validated(BookingDto.Create.class) @RequestBody BookingDto bookingDto) {
+                          @Validated(BookingInDto.Create.class) @RequestBody BookingInDto bookingInDto) {
         User owner = userService.getById(userId).orElseThrow(() -> new ForbiddenException(
                 String.format("Can't create booking for user id=%d", userId)));
-        Item item = itemService.getById(bookingDto.getItemId())
-                .orElseThrow(() -> new NotFoundException(String.format(
-                        "Item with id=%d not found", bookingDto.getItemId())));
+
+        Item item = itemService.getById(bookingInDto.getItemId()).orElseThrow(() -> new NotFoundException(
+                String.format("Item with id=%d not found", bookingInDto.getItemId())));
+
         if (!item.getAvailable()) {
-            throw new BadRequestException(String.format("Item with id=%d unavailable for booking", bookingDto
+            throw new BadRequestException(String.format("Item with id=%d unavailable for booking", bookingInDto
                     .getItemId()));
         }
-        if (!bookingDto.getStart().isBefore(bookingDto.getEnd())) {
+
+        if (!bookingInDto.getStart().isBefore(bookingInDto.getEnd())) {
             throw new BadRequestException("Can't create booking where start is not before end");
         }
 
-        return service.create(BookingMapper.toModel(bookingDto, owner, item, BookingStatus.WAITING));
+        if (item.getOwner().equals(owner)) {
+            throw new NotFoundException(String.format("Can't booking item id=%d for user id=%d", bookingInDto.getItemId(),
+                    userId));
+        }
+
+        return service.create(BookingMapper.toModel(bookingInDto, owner, item, BookingStatus.WAITING));
     }
 
     @PatchMapping("/{bookingId}")
@@ -56,13 +63,21 @@ public class BookingController {
                          @PathVariable int bookingId, @RequestParam @NotNull boolean approved) {
         Booking booking = service.getById(bookingId).orElseThrow(() -> new NotFoundException(String.format(
                 "Booking with id=%d not found", bookingId)));
+
         User owner = userService.getById(userId).orElseThrow(() -> new NotFoundException(String.format(
                 "User with id=%d not found", userId)));
+
         if (!Objects.equals(booking.item.getOwner(), owner)) {
             throw new NotFoundException(String.format("Not found booking for user id=%d and booking id=%d",
                     userId, bookingId));
         }
+
         BookingStatus bookingStatus = approved ? BookingStatus.APPROVED : BookingStatus.REJECTED;
+        if (booking.status == bookingStatus) {
+            throw new BadRequestException(String.format("For booking with id=%d status already is %s", bookingId,
+                    bookingStatus));
+        }
+
         return service.update(booking.toBuilder().status(bookingStatus).build());
     }
 
@@ -70,12 +85,14 @@ public class BookingController {
     public Booking get(@RequestHeader(USER_ID_HEADER) @NotNull int userId, @PathVariable int bookingId) {
         Booking booking = service.getById(bookingId).orElseThrow(() -> new NotFoundException(String.format(
                 "Booking with id=%d not found", bookingId)));
+
         Optional<User> owner = userService.getById(userId);
         if (owner.isEmpty() || (!Objects.equals(booking.booker, owner.get())
                 && !Objects.equals(booking.item.getOwner(), owner.get()))) {
             throw new NotFoundException(String.format("Can't get booking info for user id=%d and booking id=%d",
                     userId, bookingId));
         }
+
         return booking;
     }
 
@@ -84,6 +101,7 @@ public class BookingController {
                                         @RequestParam(defaultValue = "all") String state) {
         User booker = userService.getById(userId).orElseThrow(() -> new ForbiddenException(
                 String.format("Can't get booking list for booker id=%d", userId)));
+
         state = state.toLowerCase();
         switch (state) {
             case "all":
@@ -94,6 +112,10 @@ public class BookingController {
                 return service.getPastByBooker(booker, LocalDateTime.now());
             case "future":
                 return service.getFutureByBooker(booker, LocalDateTime.now());
+            case "waiting":
+                return service.getAllByStateAndBooker(booker, BookingStatus.WAITING);
+            case "rejected":
+                return service.getAllByStateAndBooker(booker, BookingStatus.REJECTED);
             default:
                 throw new BadRequestException("Unknown state: UNSUPPORTED_STATUS");
         }
@@ -101,9 +123,10 @@ public class BookingController {
 
     @GetMapping("/owner")
     public List<Booking> getAllByOwner(@RequestHeader(USER_ID_HEADER) @NotNull int userId,
-                                        @RequestParam(defaultValue = "all") String state) {
+                                       @RequestParam(defaultValue = "all") String state) {
         User owner = userService.getById(userId).orElseThrow(() -> new ForbiddenException(
                 String.format("Can't get booking list for owner id=%d", userId)));
+
         state = state.toLowerCase();
         switch (state) {
             case "all":
@@ -114,6 +137,10 @@ public class BookingController {
                 return service.getPastByOwner(owner, LocalDateTime.now());
             case "future":
                 return service.getFutureByOwner(owner, LocalDateTime.now());
+            case "waiting":
+                return service.getAllByStateAndOwner(owner, BookingStatus.WAITING);
+            case "rejected":
+                return service.getAllByStateAndOwner(owner, BookingStatus.REJECTED);
             default:
                 throw new BadRequestException("Unknown state: UNSUPPORTED_STATUS");
         }

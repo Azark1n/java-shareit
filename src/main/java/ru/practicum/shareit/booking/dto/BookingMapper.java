@@ -12,34 +12,20 @@ public class BookingMapper {
         throw new IllegalStateException("Utility class");
     }
 
-    public static Booking toModel(BookingDto bookingDto, User owner, Item item, BookingStatus status) {
+    public static Booking toModel(BookingInDto bookingInDto, User owner, Item item, BookingStatus status) {
         return Booking.builder()
-                .start(bookingDto.getStart())
-                .end(bookingDto.getEnd())
+                .start(bookingInDto.getStart())
+                .end(bookingInDto.getEnd())
                 .item(item)
                 .booker(owner)
                 .status(status)
                 .build();
     }
 
-//    public static Item patch(Item currentItem, Map<String, Object> patchValues) {
-//        Item patchedItem = currentItem.toBuilder().build();
-//        Field[] fields = Item.class.getDeclaredFields();
-//        for (Field field : fields) {
-//            patchValues.forEach((key, value) -> {
-//                if (key.equalsIgnoreCase(field.getName())) {
-//                    try {
-//                        final Field declaredField = Item.class.getDeclaredField(key);
-//                        declaredField.setAccessible(true);
-//                        declaredField.set(patchedItem, value);
-//                    } catch (NoSuchFieldException | IllegalAccessException e) {
-//                        log.error("Unable to do partial update field: " + key + " :: ", e);
-//                        throw new BadRequestException("Something went wrong at server while partial update");
-//                    }
-//                }
-//            });
-//        }
-//
-//        return patchedItem;
-//    }
+    public static BookingShortOutDto toShortDto(Booking booking) {
+        return BookingShortOutDto.builder()
+                .id(booking.getId())
+                .bookerId(booking.getBooker().getId())
+                .build();
+    }
 }
