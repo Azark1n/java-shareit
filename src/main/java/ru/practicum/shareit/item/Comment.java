@@ -20,20 +20,20 @@ import java.time.LocalDateTime;
 public class Comment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    int id;
+    private Integer id;
 
     @NotNull
     @NotBlank
-    String text;
+    private String text;
 
     @NotNull
     @ManyToOne
-    Item item;
+    private Item item;
 
     @NotNull
     @ManyToOne
-    User author;
+    private User author;
 
     @NotNull
-    LocalDateTime created;
+    private LocalDateTime created;
 }

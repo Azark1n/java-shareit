@@ -19,23 +19,23 @@ import javax.validation.constraints.NotNull;
 public class Item {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    int id;
+    private Integer id;
 
     @NotNull
     @NotBlank
-    String name;
+    private String name;
 
     @NotNull
     @NotBlank
-    String description;
+    private String description;
 
     @NotNull
     @Column(name = "is_available")
-    Boolean available;
+    private Boolean available;
 
     @NotNull
     @ManyToOne
-    User owner;
+    private User owner;
 
     //ItemRequest request;
 }

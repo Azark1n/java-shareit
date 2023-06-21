@@ -17,27 +17,27 @@ import java.time.LocalDateTime;
 public class Booking {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    int id;
+    private Integer id;
 
     @NotNull
     @Column(name = "start_date")
-    LocalDateTime start;
+    private LocalDateTime start;
 
     @NotNull
     @Column(name = "end_date")
-    LocalDateTime end;
+    private LocalDateTime end;
 
     @NotNull
     @ManyToOne
     @JoinColumn(name = "item_id")
-    Item item;
+    private Item item;
 
     @NotNull
     @ManyToOne
     @JoinColumn(name = "booker_id")
-    User booker;
+    private User booker;
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    BookingStatus status;
+    private BookingStatus status;
 }

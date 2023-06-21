@@ -72,6 +72,13 @@ public class ErrorHandlingControllerAdvice {
         return new ErrorMessage(e.getMessage());
     }
 
+    @ExceptionHandler(UnsupportedStatusException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorMessage badRequestException(UnsupportedStatusException e) {
+        log.warn(e.getMessage());
+        return new ErrorMessage(e.getMessage());
+    }
+
     @ExceptionHandler(org.hibernate.exception.ConstraintViolationException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     public ErrorMessage forbiddenException2(org.hibernate.exception.ConstraintViolationException e) {
@@ -82,17 +89,4 @@ public class ErrorHandlingControllerAdvice {
         }
         return new ErrorMessage("Неизвестная ошибка Constraint violation");
     }
-//    @ExceptionHandler(DataIntegrityViolationException.class)
-//    public ResponseEntity<String> handleSqlException(DataIntegrityViolationException ex) {
-//        // Обработка ошибки
-//        String errorMessage = "Произошла ошибка при выполнении SQL-запроса: " + ex.getMessage();
-//        return new ResponseEntity<>(errorMessage, HttpStatus.INTERNAL_SERVER_ERROR);
-//    }
-//    @ExceptionHandler(SQLException.class)
-//    public ResponseEntity<String> handleSQLException(SQLException ex) {
-//        //DataAccessException dex = sqlExceptionHelper.convertSQLException(ex);
-//        // Логика обработки возникшей ошибки
-//        //((PSQLExceptio)ex).ser
-//        return new ResponseEntity<>("adsfaf", HttpStatus.ACCEPTED);
-//    }
 }

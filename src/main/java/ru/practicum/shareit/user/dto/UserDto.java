@@ -1,15 +1,21 @@
 package ru.practicum.shareit.user.dto;
 
 import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
+import lombok.extern.jackson.Jacksonized;
 
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Null;
 
-@Value
+@Data
 @Builder(toBuilder = true)
+@Jacksonized
 public class UserDto {
     public interface Create {}
+
+    @Null(groups = Create.class)
+    Integer id;
 
     @NotBlank(groups = Create.class)
     String name;

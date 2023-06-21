@@ -1,30 +1,26 @@
 package ru.practicum.shareit.item.dto;
 
-import lombok.extern.slf4j.Slf4j;
+import lombok.experimental.UtilityClass;
 import ru.practicum.shareit.item.Comment;
 import ru.practicum.shareit.item.Item;
 import ru.practicum.shareit.user.User;
 
 import java.time.LocalDateTime;
 
-@Slf4j
+@UtilityClass
 public class CommentMapper {
-    private CommentMapper() {
-        throw new IllegalStateException("Utility class");
-    }
-
-    public static CommentOutDto toDto(Comment comment) {
-        return CommentOutDto.builder()
-                .id(comment.getId())
-                .text(comment.getText())
-                .authorName(comment.getAuthor().getName())
-                .created(comment.getCreated())
+    public static CommentDto toDto(Comment model) {
+        return CommentDto.builder()
+                .id(model.getId())
+                .text(model.getText())
+                .authorName(model.getAuthor().getName())
+                .created(model.getCreated())
                 .build();
     }
 
-    public static Comment toModel(CommentInDto commentInDto, User author, Item item) {
+    public static Comment toModel(CommentDto dto, User author, Item item) {
         return Comment.builder()
-                .text(commentInDto.getText())
+                .text(dto.getText())
                 .author(author)
                 .item(item)
                 .created(LocalDateTime.now())

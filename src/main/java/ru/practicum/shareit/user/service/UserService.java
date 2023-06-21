@@ -1,21 +1,18 @@
 package ru.practicum.shareit.user.service;
 
-import ru.practicum.shareit.user.User;
+import ru.practicum.shareit.user.dto.UserDto;
 
-import javax.validation.Valid;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 
 public interface UserService {
-    User create(@Valid User user);
+    UserDto create(UserDto userDto);
 
-    List<User> getAll();
+    List<UserDto> getAll();
 
-    User getByIdOrThrow(int id);
+    UserDto getById(int id);
 
-    Optional<User> getById(int id);
-
-    User update(@Valid User user);
+    UserDto patch(int id, Map<String, Object> patchValues);
 
     boolean deleteById(int id);
 }

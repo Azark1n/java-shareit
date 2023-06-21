@@ -3,19 +3,27 @@ package ru.practicum.shareit.booking.service;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 import ru.practicum.shareit.booking.Booking;
+import ru.practicum.shareit.booking.BookingState;
 import ru.practicum.shareit.booking.BookingStatus;
+import ru.practicum.shareit.booking.dto.BookingDto;
+import ru.practicum.shareit.booking.dto.BookingMapper;
 import ru.practicum.shareit.booking.repository.BookingRepository;
+import ru.practicum.shareit.exception.BadRequestException;
+import ru.practicum.shareit.exception.ForbiddenException;
+import ru.practicum.shareit.exception.NotFoundException;
+import ru.practicum.shareit.exception.UnsupportedStatusException;
 import ru.practicum.shareit.item.Item;
+import ru.practicum.shareit.item.repository.ItemRepository;
 import ru.practicum.shareit.user.User;
+import ru.practicum.shareit.user.repository.UserRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Validated
@@ -24,97 +32,136 @@ import java.util.Optional;
 @Service
 public class BookingServiceImpl implements BookingService {
     private final BookingRepository repository;
+    private final UserRepository userRepository;
+    private final ItemRepository itemRepository;
 
     @Override
-    public Booking create(Booking booking) {
+    public BookingDto create(BookingDto dto, int userId) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new ForbiddenException(
+                String.format("Can't create booking for user id %d", userId)));
+
+        Item item = itemRepository.findById(dto.getItemId()).orElseThrow(() -> new NotFoundException(
+                String.format("Item with id %d not found", dto.getItemId())));
+
+        if (!item.getAvailable()) {
+            throw new BadRequestException(String.format("Item with id %d unavailable for booking", dto.getItemId()));
+        }
+
+        if (!dto.getStart().isBefore(dto.getEnd())) {
+            throw new BadRequestException("Can't create booking where start is not before end");
+        }
+
+        if (item.getOwner().equals(user)) {
+            throw new NotFoundException(String.format("Can't booking item id=%d for user id=%d", dto.getItemId(), userId));
+        }
+
+        Booking booking = BookingMapper.toModel(dto, user, item, BookingStatus.WAITING);
         log.info(String.format("Create booking: %s", booking));
 
-        return repository.save(booking);
+        return BookingMapper.toDto(repository.save(booking));
     }
 
     @Override
-    public Optional<Booking> getById(int id) {
-        return repository.findById(id);
-    }
+    public BookingDto patch(int bookingId, int userId, boolean approved) {
+        Booking booking = repository.findById(bookingId).orElseThrow(() -> new NotFoundException(String.format(
+                "Booking with id %d not found", bookingId)));
 
-    @Override
-    public List<Booking> getAllByBooker(User user) {
-        return repository.findByBookerOrderByStartDesc(user, Sort.by(Sort.Direction.DESC, "start"));
-    }
+        User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException(String.format(
+                "User with id %d not found", userId)));
 
-    @Override
-    public List<Booking> getAllByOwner(User owner) {
-        return repository.findByItem_OwnerOrderByStartDesc(owner, Sort.by(Sort.Direction.DESC, "start"));
-    }
-
-    @Override
-    public List<Booking> getCurrentByBooker(User booker, LocalDateTime now) {
-        return repository.findByBookerAndStartLessThanEqualAndEndGreaterThanEqualOrderByStartDesc(booker, now, now,
-                Sort.by(Sort.Direction.DESC, "start"));
-    }
-
-    @Override
-    public List<Booking> getCurrentByOwner(User owner, LocalDateTime now) {
-        return repository.findByItem_OwnerAndStartLessThanEqualAndEndGreaterThanEqualOrderByStartDesc(owner, now, now,
-                Sort.by(Sort.Direction.DESC, "start"));
-    }
-
-    @Override
-    public List<Booking> getPastByBooker(User booker, LocalDateTime now) {
-        return repository.findByBookerAndEndLessThanOrderByStartDesc(booker, now,
-                Sort.by(Sort.Direction.DESC, "start"));
-    }
-
-    @Override
-    public List<Booking> getPastByOwner(User booker, LocalDateTime now) {
-        return repository.findByItem_OwnerAndEndLessThanOrderByStartDesc(booker, now,
-                Sort.by(Sort.Direction.DESC, "start"));
-    }
-
-    @Override
-    public List<Booking> getFutureByBooker(User booker, LocalDateTime now) {
-        return repository.findByBookerAndStartGreaterThanOrderByStartDesc(booker, now,
-                Sort.by(Sort.Direction.DESC, "start"));
-    }
-
-    @Override
-    public List<Booking> getFutureByOwner(User booker, LocalDateTime now) {
-        return repository.findByItem_OwnerAndStartGreaterThanOrderByStartDesc(booker, now,
-                Sort.by(Sort.Direction.DESC, "start"));
-    }
-
-    @Override
-    public List<Booking> getAllByStateAndBooker(User booker, BookingStatus status) {
-        return repository.findByBookerAndStatusOrderByStartDesc(booker, status);
-    }
-
-    @Override
-    public List<Booking> getAllByStateAndOwner(User owner, BookingStatus status) {
-        return repository.findByItem_OwnerAndStatusOrderByStartDesc(owner, status);
-    }
-
-    @Override
-    public Booking getLastBooking(Item item, User user) {
-        if (Objects.equals(item.getOwner(), user)) {
-            return repository.findFirstByItemAndStartBeforeAndStatusOrderByStartDesc(item,
-                    LocalDateTime.now(), BookingStatus.APPROVED);
-        } else {
-            return null;
+        if (!Objects.equals(booking.getItem().getOwner(), user)) {
+            throw new NotFoundException(String.format("Not found booking for user id %d and booking id %d", userId, bookingId));
         }
-    }
 
-    @Override
-    public Booking getNextBooking(Item item, User user) {
-        if (Objects.equals(item.getOwner(), user)) {
-            return repository.findFirstByItemAndStartAfterAndStatusOrderByStart(item, LocalDateTime.now(),
-                    BookingStatus.APPROVED);
-        } else {
-            return null;
+        BookingStatus bookingStatus = approved ? BookingStatus.APPROVED : BookingStatus.REJECTED;
+        if (booking.getStatus() == bookingStatus) {
+            throw new BadRequestException(String.format("For booking with id %d status already is %s", bookingId, bookingStatus));
         }
+
+        Booking updatedBooking = booking.toBuilder().status(bookingStatus).build();
+        log.info(String.format("Update booking: %s", updatedBooking));
+
+        return BookingMapper.toDto(repository.save(updatedBooking));
     }
 
     @Override
-    public Booking update(Booking item) {
-        return repository.save(item);
+    public BookingDto getById(int bookingId, int userId) {
+        Booking booking = repository.findById(bookingId).orElseThrow(() -> new NotFoundException(String.format(
+                "Booking with id %d not found", bookingId)));
+
+        User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException(String.format(
+                "User with id %d not found", userId)));
+
+        if (!Objects.equals(booking.getBooker(), user) && !Objects.equals(booking.getItem().getOwner(), user)) {
+            throw new NotFoundException(String.format("Can't get booking info for user id=%d and booking id=%d", userId, bookingId));
+        }
+
+        return BookingMapper.toDto(booking);
+    }
+
+    @Override
+    public List<BookingDto> getAllByBookerAndState(int userId, String state) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new ForbiddenException(
+                String.format("Can't get booking list for booker id %d", userId)));
+
+        BookingState bookingState;
+        try {
+            bookingState = BookingState.valueOf(state);
+        } catch (IllegalArgumentException ex) {
+            throw new UnsupportedStatusException("Unknown state: UNSUPPORTED_STATUS");
+        }
+
+        List<Booking> result;
+        switch (bookingState) {
+            case ALL:
+                result = repository.findByBookerOrderByStartDesc(user);
+                break;
+            case CURRENT:
+                result = repository.findByBookerAndStartLessThanEqualAndEndGreaterThanEqualOrderByStartDesc(user, LocalDateTime.now(), LocalDateTime.now());
+                break;
+            case PAST:
+                result = repository.findByBookerAndEndLessThanOrderByStartDesc(user, LocalDateTime.now());
+                break;
+            case FUTURE:
+                result = repository.findByBookerAndStartGreaterThanOrderByStartDesc(user, LocalDateTime.now());
+                break;
+            default:
+                result = repository.findByBookerAndStatusOrderByStartDesc(user, BookingStatus.valueOf(state));
+        }
+
+        return result.stream().map(BookingMapper::toDto).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<BookingDto> getAllByOwnerAndState(int userId, String state) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new ForbiddenException(
+                String.format("Can't get booking list for booker id %d", userId)));
+
+        BookingState bookingState;
+        try {
+            bookingState = BookingState.valueOf(state);
+        } catch (IllegalArgumentException ex) {
+            throw new UnsupportedStatusException("Unknown state: UNSUPPORTED_STATUS");
+        }
+
+        List<Booking> result;
+        switch (bookingState) {
+            case ALL:
+                result = repository.findByItem_OwnerOrderByStartDesc(user);
+                break;
+            case CURRENT:
+                result = repository.findByItem_OwnerAndStartLessThanEqualAndEndGreaterThanEqualOrderByStartDesc(user, LocalDateTime.now(), LocalDateTime.now());
+                break;
+            case PAST:
+                result = repository.findByItem_OwnerAndEndLessThanOrderByStartDesc(user, LocalDateTime.now());
+                break;
+            case FUTURE:
+                result = repository.findByItem_OwnerAndStartGreaterThanOrderByStartDesc(user, LocalDateTime.now());
+                break;
+            default:
+                result = repository.findByItem_OwnerAndStatusOrderByStartDesc(user, BookingStatus.valueOf(state));
+        }
+
+        return result.stream().map(BookingMapper::toDto).collect(Collectors.toList());
     }
 }

@@ -16,14 +16,14 @@ import javax.validation.constraints.NotNull;
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    int id;
+    private Integer id;
 
     @NotNull
     @NotBlank
-    String name;
+    private String name;
 
     @NotNull
     @NotBlank
     @Email
-    String email;
+    private String email;
 }
