@@ -30,6 +30,8 @@ public class ItemDto {
     @NotNull(groups = Create.class)
     Boolean available;
 
+    Integer requestId;
+
     BookingShortDto lastBooking;
 
     BookingShortDto nextBooking;

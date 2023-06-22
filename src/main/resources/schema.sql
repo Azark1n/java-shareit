@@ -20,7 +20,8 @@ CREATE TABLE IF NOT EXISTS items
     is_available      boolean,
     owner_id          bigint,
     request_id        bigint,
-    FOREIGN KEY (owner_id) REFERENCES users (id)
+    FOREIGN KEY (owner_id) REFERENCES users (id),
+    FOREIGN KEY (request_id) REFERENCES requests (id)
 );
 
 CREATE TABLE IF NOT EXISTS bookings

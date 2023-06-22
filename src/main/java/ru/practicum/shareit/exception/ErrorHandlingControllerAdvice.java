@@ -79,6 +79,13 @@ public class ErrorHandlingControllerAdvice {
         return new ErrorMessage(e.getMessage());
     }
 
+    @ExceptionHandler(BadPageRequestException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorMessage badRequestException(BadPageRequestException e) {
+        log.warn(e.getMessage());
+        return new ErrorMessage(e.getMessage());
+    }
+
     @ExceptionHandler(org.hibernate.exception.ConstraintViolationException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     public ErrorMessage forbiddenException2(org.hibernate.exception.ConstraintViolationException e) {
