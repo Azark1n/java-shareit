@@ -17,22 +17,22 @@ public class ItemDto {
     public interface Create {}
 
     @Null(groups = Create.class)
-    Integer id;
+    private Integer id;
 
     @NotNull(groups = Create.class)
     @NotBlank(groups = Create.class)
-    String name;
+    private String name;
 
     @NotNull(groups = Create.class)
     @NotBlank(groups = Create.class)
-    String description;
+    private String description;
 
     @NotNull(groups = Create.class)
-    Boolean available;
+    private Boolean available;
 
-    BookingShortDto lastBooking;
+    private BookingShortDto lastBooking;
 
-    BookingShortDto nextBooking;
+    private BookingShortDto nextBooking;
 
-    List<CommentDto> comments;
+    private List<CommentDto> comments;
 }
