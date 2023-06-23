@@ -4,12 +4,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.Value;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import ru.practicum.shareit.exception.ForbiddenException;
+import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.dto.ItemDto;
-import ru.practicum.shareit.item.dto.ItemMapper;
 import ru.practicum.shareit.item.service.ItemService;
-import ru.practicum.shareit.user.User;
-import ru.practicum.shareit.user.service.UserService;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -21,49 +18,38 @@ import java.util.Map;
 @RestController
 @RequestMapping("/items")
 public class ItemController {
-    ItemService service;
-    UserService userService;
     private static final String USER_ID_HEADER = "X-Sharer-User-Id";
+    ItemService service;
 
     @PostMapping
-    public Item create(@RequestHeader(USER_ID_HEADER) @NotNull int userId, @Valid @RequestBody ItemDto itemDto) {
-        User owner = userService.getByIdOrThrow(userId);
-
-        return service.create(ItemMapper.toModel(owner, itemDto));
+    public ItemDto create(@RequestHeader(USER_ID_HEADER) @NotNull int userId, @Validated(ItemDto.Create.class) @RequestBody ItemDto dto) {
+        return service.create(dto, userId);
     }
 
     @PatchMapping("/{id}")
-    public Item patch(@RequestHeader(USER_ID_HEADER) @NotNull int userId, @PathVariable int id, @Validated(ItemDto.Create.class) @RequestBody Map<String,Object> patchValues) {
-        User owner = userService.getByIdOrThrow(userId);
-        Item item = service.getByIdOrThrow(id);
-
-        if (!item.getOwner().equals(owner)) {
-            throw new ForbiddenException(String.format("Patch item with id=%d for user with id=%d forbidden", id, userId));
-        }
-
-        Item patchedItem = ItemMapper.patch(item, patchValues);
-
-        return service.update(patchedItem);
+    public ItemDto patch(@RequestHeader(USER_ID_HEADER) @NotNull int userId, @PathVariable int id, @Validated(ItemDto.Create.class) @RequestBody Map<String, Object> patchValues) {
+        return service.patch(id, userId, patchValues);
     }
 
     @GetMapping("/{id}")
-    public Item getById(@RequestHeader(USER_ID_HEADER) @NotNull int userId, @PathVariable int id) {
-        userService.getByIdOrThrow(userId);
-        return service.getByIdOrThrow(id);
+    public ItemDto getById(@RequestHeader(USER_ID_HEADER) @NotNull int userId, @PathVariable int id) {
+        return service.getById(id, userId);
+    }
+
+    @PostMapping("/{id}/comment")
+    public CommentDto createComment(@RequestHeader(USER_ID_HEADER) @NotNull int userId, @PathVariable int id,
+                                       @RequestBody @Valid CommentDto commentDto) {
+        return service.createComment(commentDto, id, userId);
     }
 
     @GetMapping
-    public List<Item> getAllByUser(@RequestHeader(USER_ID_HEADER) @NotNull int userId) {
-        User owner = userService.getByIdOrThrow(userId);
-
-        return service.getAllByUser(owner);
+    public List<ItemDto> getAllByUser(@RequestHeader(USER_ID_HEADER) @NotNull int userId) {
+        return service.getAllByUserId(userId);
     }
 
     @GetMapping("/search")
-    public List<Item> search(@RequestHeader(USER_ID_HEADER) @NotNull int userId, @RequestParam(value = "text") String searchText) {
-        userService.getByIdOrThrow(userId);
-
-        return service.search(searchText);
+    public List<ItemDto> search(@RequestHeader(USER_ID_HEADER) @NotNull int userId, @RequestParam(value = "text") String searchText) {
+        return service.search(searchText, userId);
     }
 
 }

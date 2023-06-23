@@ -1,20 +1,21 @@
 package ru.practicum.shareit.item.service;
 
-import ru.practicum.shareit.item.Item;
-import ru.practicum.shareit.user.User;
+import ru.practicum.shareit.item.dto.CommentDto;
+import ru.practicum.shareit.item.dto.ItemDto;
 
-import javax.validation.Valid;
 import java.util.List;
+import java.util.Map;
 
 public interface ItemService {
+    ItemDto create(ItemDto dto, int userId);
 
-    Item create(@Valid Item item);
+    ItemDto patch(int id, int userId, Map<String, Object> patchValues);
 
-    Item getByIdOrThrow(int id);
+    ItemDto getById(int id, int userId);
 
-    List<Item> getAllByUser(User user);
+    List<ItemDto> getAllByUserId(int userId);
 
-    Item update(Item item);
+    List<ItemDto> search(String text, int userId);
 
-    List<Item> search(String text);
+    CommentDto createComment(CommentDto dto, int id, int userId);
 }

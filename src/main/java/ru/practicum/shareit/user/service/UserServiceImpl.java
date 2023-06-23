@@ -3,16 +3,23 @@ package ru.practicum.shareit.user.service;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.beanutils.BeanUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.validation.BeanPropertyBindingResult;
+import org.springframework.validation.Errors;
+import org.springframework.validation.Validator;
 import org.springframework.validation.annotation.Validated;
-import ru.practicum.shareit.exception.AlreadyExistException;
+import ru.practicum.shareit.exception.BadRequestException;
 import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.user.User;
+import ru.practicum.shareit.user.dto.UserDto;
+import ru.practicum.shareit.user.dto.UserMapper;
 import ru.practicum.shareit.user.repository.UserRepository;
 
-import javax.validation.Valid;
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -21,43 +28,62 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
     private final UserRepository repository;
+    private final Validator validator;
 
     @Override
-    public User create(@Valid User user) {
-        if (repository.getByEmail(user.getEmail()).isPresent()) {
-            throw new AlreadyExistException(String.format("User with email %s already exist", user.getEmail()));
-        }
-        log.info(String.format("Create user: %s", user));
+    public UserDto create(UserDto dto) {
+        log.info(String.format("Create user: %s", dto));
 
-        return repository.create(user);
+        User user = repository.save(UserMapper.toModel(dto));
+
+        return UserMapper.toDto(user);
     }
 
     @Override
-    public List<User> getAll() {
-        return repository.getAll();
+    public List<UserDto> getAll() {
+        return repository.findAll().stream()
+                .map(UserMapper::toDto)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public User getByIdOrThrow(int id) {
-        return repository.getById(id).orElseThrow(() -> new NotFoundException(String.format("User with id %d not found", id)));
+    public UserDto getById(int id) {
+        User user = repository.findById(id)
+                .orElseThrow(() -> new NotFoundException(String.format("User with id %d not found", id)));
+
+        return UserMapper.toDto(user);
     }
 
     @Override
-    public User update(@Valid User user) {
-        if (repository.getById(user.getId()).isEmpty()) {
-            throw new NotFoundException(String.format("User with id %d not found", user.getId()));
-        }
-        Optional<User> byEmail = repository.getByEmail(user.getEmail());
-        if (byEmail.isPresent() && byEmail.get().getId() != user.getId()) {
-            throw new AlreadyExistException(String.format("User with email %s already exist", user.getEmail()));
-        }
-        log.info(String.format("Update user: %s", user));
+    public UserDto patch(int id, Map<String,Object> patchValues) {
+        User existUser = repository.findById(id)
+                .orElseThrow(() -> new NotFoundException(String.format("User with id %d not found", id)));
 
-        return repository.update(user);
+        UserDto dto = UserMapper.toDto(existUser);
+
+        for (Map.Entry<String, Object> entry : patchValues.entrySet()) {
+            try {
+                BeanUtils.copyProperty(dto, entry.getKey(), entry.getValue());
+            } catch (IllegalAccessException | InvocationTargetException e) {
+                throw new BadRequestException(e.getMessage());
+            }
+        }
+
+        Errors errors = new BeanPropertyBindingResult(dto, UserDto.class.getName());
+        validator.validate(dto, errors);
+
+        log.info(String.format("Update user: %s", dto));
+
+        User user = repository.save(UserMapper.toModel(dto));
+
+        return UserMapper.toDto(user);
     }
 
     @Override
     public boolean deleteById(int id) {
-        return repository.deleteById(id);
+        boolean exist = repository.findById(id).isPresent();
+        repository.deleteById(id);
+
+        return exist;
     }
 }

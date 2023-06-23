@@ -5,7 +5,6 @@ import lombok.Value;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.user.dto.UserDto;
-import ru.practicum.shareit.user.dto.UserMapper;
 import ru.practicum.shareit.user.service.UserService;
 
 import java.util.List;
@@ -19,21 +18,18 @@ public class UserController {
     UserService service;
 
     @PostMapping
-    public User create(@Validated(UserDto.Create.class) @RequestBody UserDto userDto) {
-        return service.create(UserMapper.toModel(userDto));
+    public UserDto create(@Validated(UserDto.Create.class) @RequestBody UserDto userDto) {
+        return service.create(userDto);
     }
 
     @PatchMapping("/{id}")
-    public User patch(@PathVariable int id, @RequestBody Map<String,Object> patchValues) {
-        User currentUser = service.getByIdOrThrow(id);
-        User patchedUser = UserMapper.patch(currentUser, patchValues);
-
-        return service.update(patchedUser);
+    public UserDto patch(@PathVariable int id, @RequestBody Map<String,Object> patchValues) {
+        return service.patch(id, patchValues);
     }
 
     @GetMapping("/{id}")
-    public User getById(@PathVariable int id) {
-        return service.getByIdOrThrow(id);
+    public UserDto getById(@PathVariable int id) {
+        return service.getById(id);
     }
 
     @DeleteMapping("/{id}")
@@ -42,7 +38,7 @@ public class UserController {
     }
 
     @GetMapping
-    public List<User> getAll() {
+    public List<UserDto> getAll() {
         return service.getAll();
     }
 }
