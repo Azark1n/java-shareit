@@ -15,12 +15,12 @@ public class UserDto {
     public interface Create {}
 
     @Null(groups = Create.class)
-    Integer id;
+    private Integer id;
 
     @NotBlank(groups = Create.class)
-    String name;
+    private String name;
 
     @NotBlank(groups = Create.class)
     @Email(groups = Create.class)
-    String email;
+    private String email;
 }

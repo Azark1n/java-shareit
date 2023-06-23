@@ -1,14 +1,14 @@
 package ru.practicum.shareit.booking.dto;
 
 import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
 import lombok.extern.jackson.Jacksonized;
 
-@Value
+@Data
 @Builder(toBuilder = true)
 @Jacksonized
 public class BookingShortDto {
-    int id;
+    private Integer id;
 
-    int bookerId;
+    private Integer bookerId;
 }

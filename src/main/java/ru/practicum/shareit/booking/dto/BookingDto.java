@@ -1,7 +1,7 @@
 package ru.practicum.shareit.booking.dto;
 
 import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
 import lombok.extern.jackson.Jacksonized;
 import ru.practicum.shareit.booking.BookingStatus;
 import ru.practicum.shareit.item.Item;
@@ -12,32 +12,32 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Null;
 import java.time.LocalDateTime;
 
-@Value
+@Data
 @Builder(toBuilder = true)
 @Jacksonized
 public class BookingDto {
     public interface Create {}
 
     @Null(groups = Create.class)
-    Integer id;
+    private Integer id;
 
     @NotNull(groups = Create.class)
     @FutureOrPresent(groups = Create.class)
-    LocalDateTime start;
+    private LocalDateTime start;
 
     @NotNull(groups = Create.class)
     @FutureOrPresent(groups = Create.class)
-    LocalDateTime end;
+    private LocalDateTime end;
 
     @NotNull(groups = Create.class)
-    Integer itemId;
+    private Integer itemId;
 
     @Null(groups = Create.class)
-    Item item;
+    private Item item;
 
     @Null(groups = Create.class)
-    User booker;
+    private User booker;
 
     @Null(groups = Create.class)
-    BookingStatus status;
+    private BookingStatus status;
 }

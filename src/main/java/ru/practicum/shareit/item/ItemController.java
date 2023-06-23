@@ -6,6 +6,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.item.dto.ItemExtraDto;
 import ru.practicum.shareit.item.service.ItemService;
 
 import javax.validation.Valid;
@@ -32,7 +33,7 @@ public class ItemController {
     }
 
     @GetMapping("/{id}")
-    public ItemDto getById(@RequestHeader(USER_ID_HEADER) @NotNull int userId, @PathVariable int id) {
+    public ItemExtraDto getById(@RequestHeader(USER_ID_HEADER) @NotNull int userId, @PathVariable int id) {
         return service.getById(id, userId);
     }
 
@@ -43,7 +44,7 @@ public class ItemController {
     }
 
     @GetMapping
-    public List<ItemDto> getAllByUser(@RequestHeader(USER_ID_HEADER) @NotNull int userId) {
+    public List<ItemExtraDto> getAllByUser(@RequestHeader(USER_ID_HEADER) @NotNull int userId) {
         return service.getAllByUserId(userId);
     }
 

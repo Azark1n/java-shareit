@@ -29,20 +29,21 @@ import java.util.stream.Collectors;
 public class UserServiceImpl implements UserService {
     private final UserRepository repository;
     private final Validator validator;
+    private final UserMapper userMapper;
 
     @Override
     public UserDto create(UserDto dto) {
         log.info(String.format("Create user: %s", dto));
 
-        User user = repository.save(UserMapper.toModel(dto));
+        User user = repository.save(userMapper.toModel(dto));
 
-        return UserMapper.toDto(user);
+        return userMapper.toDto(user);
     }
 
     @Override
     public List<UserDto> getAll() {
         return repository.findAll().stream()
-                .map(UserMapper::toDto)
+                .map(userMapper::toDto)
                 .collect(Collectors.toList());
     }
 
@@ -51,7 +52,7 @@ public class UserServiceImpl implements UserService {
         User user = repository.findById(id)
                 .orElseThrow(() -> new NotFoundException(String.format("User with id %d not found", id)));
 
-        return UserMapper.toDto(user);
+        return userMapper.toDto(user);
     }
 
     @Override
@@ -59,7 +60,7 @@ public class UserServiceImpl implements UserService {
         User existUser = repository.findById(id)
                 .orElseThrow(() -> new NotFoundException(String.format("User with id %d not found", id)));
 
-        UserDto dto = UserMapper.toDto(existUser);
+        UserDto dto = userMapper.toDto(existUser);
 
         for (Map.Entry<String, Object> entry : patchValues.entrySet()) {
             try {
@@ -74,9 +75,9 @@ public class UserServiceImpl implements UserService {
 
         log.info(String.format("Update user: %s", dto));
 
-        User user = repository.save(UserMapper.toModel(dto));
+        User user = repository.save(userMapper.toModel(dto));
 
-        return UserMapper.toDto(user);
+        return userMapper.toDto(user);
     }
 
     @Override
