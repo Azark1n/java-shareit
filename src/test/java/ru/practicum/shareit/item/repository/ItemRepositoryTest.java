@@ -59,6 +59,7 @@ class ItemRepositoryTest {
         assertEquals(1, itemList.size());
         assertEquals(item1, itemList.get(0));
     }
+
     @Test
     void findByNameLikeIgnoreCaseOrDescriptionLikeIgnoreCaseItemAndNone() {
         List<Item> itemList = itemRepository.findByNameLikeIgnoreCaseOrDescriptionLikeIgnoreCase("descr");
