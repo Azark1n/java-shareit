@@ -58,10 +58,7 @@ public class BookingServiceImpl implements BookingService {
             throw new NotFoundException(String.format("Can't booking item id=%d for user id=%d", dto.getItemId(), userId));
         }
 
-        Booking booking = bookingMapper.toModel(dto);
-        booking.setBooker(user);
-        booking.setItem(item);
-        booking.setStatus(BookingStatus.WAITING);
+        Booking booking = bookingMapper.toModel(dto, user, item, BookingStatus.WAITING);
         log.info(String.format("Create booking: %s", booking));
 
         return bookingMapper.toDto(repository.save(booking));

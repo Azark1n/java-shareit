@@ -20,7 +20,7 @@ public class ErrorHandlingControllerAdvice {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public Map<String, String> handleValidationExceptions(MethodArgumentNotValidException ex) {
+    public Map<String, String> onMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
         Map<String, String> errors = new HashMap<>();
         ex.getBindingResult().getAllErrors().forEach(error -> {
             String fieldName = ((FieldError) error).getField();
@@ -53,42 +53,42 @@ public class ErrorHandlingControllerAdvice {
 
     @ExceptionHandler(AlreadyExistException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
-    public ErrorMessage alreadyExistException(AlreadyExistException e) {
+    public ErrorMessage onAlreadyExistException(AlreadyExistException e) {
         log.warn(e.getMessage());
         return new ErrorMessage(e.getMessage());
     }
 
     @ExceptionHandler(ForbiddenException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
-    public ErrorMessage forbiddenException(ForbiddenException e) {
+    public ErrorMessage onForbiddenException(ForbiddenException e) {
         log.warn(e.getMessage());
         return new ErrorMessage(e.getMessage());
     }
 
     @ExceptionHandler(BadRequestException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorMessage badRequestException(BadRequestException e) {
+    public ErrorMessage onBadRequestException(BadRequestException e) {
         log.warn(e.getMessage());
         return new ErrorMessage(e.getMessage());
     }
 
     @ExceptionHandler(UnsupportedStatusException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorMessage badRequestException(UnsupportedStatusException e) {
+    public ErrorMessage onUnsupportedStatusException(UnsupportedStatusException e) {
         log.warn(e.getMessage());
         return new ErrorMessage(e.getMessage());
     }
 
     @ExceptionHandler(BadPageRequestException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorMessage badRequestException(BadPageRequestException e) {
+    public ErrorMessage onBadPageRequestException(BadPageRequestException e) {
         log.warn(e.getMessage());
         return new ErrorMessage(e.getMessage());
     }
 
     @ExceptionHandler(org.hibernate.exception.ConstraintViolationException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
-    public ErrorMessage forbiddenException2(org.hibernate.exception.ConstraintViolationException e) {
+    public ErrorMessage onConstraintViolationException(org.hibernate.exception.ConstraintViolationException e) {
         if ("uq_user_email".equals(e.getConstraintName())) {
             String message = e.getCause().getMessage();
             log.warn(message);

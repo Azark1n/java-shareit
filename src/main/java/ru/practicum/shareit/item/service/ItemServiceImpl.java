@@ -95,7 +95,12 @@ public class ItemServiceImpl implements ItemService {
 
         log.info(String.format("Update item: %s", dto));
 
-        Item item = repository.save(itemMapper.toModel(dto, user));
+        Item item = itemMapper.toModel(dto, user);
+        if (dto.getRequestId() != null && dto.getRequestId() > 0) {
+            ItemRequest itemRequest = itemRequestRepository.findById(dto.getRequestId())
+                    .orElseThrow(() -> new NotFoundException(String.format("Item request with id %d not found", dto.getRequestId())));
+            item.setRequest(itemRequest);
+        }
 
         return itemMapper.toDto(repository.save(item));
     }
