@@ -65,23 +65,9 @@ public class ErrorHandlingControllerAdvice {
         return new ErrorMessage(e.getMessage());
     }
 
-    @ExceptionHandler(BadRequestException.class)
+    @ExceptionHandler({BadRequestException.class, UnsupportedStatusException.class, BadPageRequestException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorMessage onBadRequestException(BadRequestException e) {
-        log.warn(e.getMessage());
-        return new ErrorMessage(e.getMessage());
-    }
-
-    @ExceptionHandler(UnsupportedStatusException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorMessage onUnsupportedStatusException(UnsupportedStatusException e) {
-        log.warn(e.getMessage());
-        return new ErrorMessage(e.getMessage());
-    }
-
-    @ExceptionHandler(BadPageRequestException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorMessage onBadPageRequestException(BadPageRequestException e) {
+    public ErrorMessage onBadRequestException(RuntimeException e) {
         log.warn(e.getMessage());
         return new ErrorMessage(e.getMessage());
     }

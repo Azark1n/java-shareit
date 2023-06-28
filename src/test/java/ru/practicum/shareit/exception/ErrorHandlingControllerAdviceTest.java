@@ -45,21 +45,4 @@ class ErrorHandlingControllerAdviceTest {
         assertNotNull(result);
         assertEquals(exception.getMessage(), result.getError());
     }
-
-    @Test
-    void onUnsupportedStatusException() {
-        var exception = new UnsupportedStatusException("message");
-        var result = errorHandler.onUnsupportedStatusException(exception);
-        assertNotNull(result);
-        assertEquals(exception.getMessage(), result.getError());
-    }
-
-    @Test
-    void onBadPageRequestException() {
-        var exception = new BadPageRequestException("message");
-        var result = errorHandler.onBadPageRequestException(exception);
-        assertNotNull(result);
-        assertEquals(exception.getMessage(), result.getError());
-    }
-
 }
