@@ -1,29 +1,19 @@
 package ru.practicum.shareit.item.dto;
 
-import lombok.experimental.UtilityClass;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingConstants;
 import ru.practicum.shareit.item.Comment;
 import ru.practicum.shareit.item.Item;
 import ru.practicum.shareit.user.User;
-
 import java.time.LocalDateTime;
 
-@UtilityClass
-public class CommentMapper {
-    public static CommentDto toDto(Comment model) {
-        return CommentDto.builder()
-                .id(model.getId())
-                .text(model.getText())
-                .authorName(model.getAuthor().getName())
-                .created(model.getCreated())
-                .build();
-    }
+@Mapper(componentModel = MappingConstants.ComponentModel.SPRING, imports = {LocalDateTime.class})
+public interface CommentMapper {
+    @Mapping(target = "authorName", source = "author.name")
+    CommentDto toDto(Comment model);
 
-    public static Comment toModel(CommentDto dto, User author, Item item) {
-        return Comment.builder()
-                .text(dto.getText())
-                .author(author)
-                .item(item)
-                .created(LocalDateTime.now())
-                .build();
-    }
+    @Mapping(target = "id", source = "dto.id")
+    @Mapping(target = "created", expression = "java(LocalDateTime.now())")
+    Comment toModel(CommentDto dto, User author, Item item);
 }

@@ -18,12 +18,11 @@ import ru.practicum.shareit.exception.ForbiddenException;
 import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.item.Comment;
 import ru.practicum.shareit.item.Item;
-import ru.practicum.shareit.item.dto.CommentDto;
-import ru.practicum.shareit.item.dto.CommentMapper;
-import ru.practicum.shareit.item.dto.ItemDto;
-import ru.practicum.shareit.item.dto.ItemMapper;
+import ru.practicum.shareit.item.dto.*;
 import ru.practicum.shareit.item.repository.CommentRepository;
 import ru.practicum.shareit.item.repository.ItemRepository;
+import ru.practicum.shareit.request.ItemRequest;
+import ru.practicum.shareit.request.repository.ItemRequestRepository;
 import ru.practicum.shareit.user.User;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.repository.UserRepository;
@@ -42,21 +41,31 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Service
 public class ItemServiceImpl implements ItemService {
-    private final Validator validator;
     private final ItemRepository repository;
     private final UserRepository userRepository;
     private final BookingRepository bookingRepository;
     private final CommentRepository commentRepository;
+    private final ItemRequestRepository itemRequestRepository;
+    private final Validator validator;
+    private final ItemMapper itemMapper;
+    private final BookingMapper bookingMapper;
+    private final CommentMapper commentMapper;
 
     @Override
     public ItemDto create(ItemDto dto, int userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException(String.format("User with id %d not found", userId)));
 
-        Item item = ItemMapper.toModel(dto, user);
+        Item item = itemMapper.toModel(dto, user);
+        if (dto.getRequestId() != null && dto.getRequestId() > 0) {
+            ItemRequest itemRequest = itemRequestRepository.findById(dto.getRequestId())
+                    .orElseThrow(() -> new NotFoundException(String.format("Item request with id %d not found", dto.getRequestId())));
+            item.setRequest(itemRequest);
+        }
+
         log.info(String.format("Create item: %s", item));
 
-        return ItemMapper.toDto(repository.save(item));
+        return itemMapper.toDto(repository.save(item));
     }
 
     @Override
@@ -71,7 +80,7 @@ public class ItemServiceImpl implements ItemService {
             throw new ForbiddenException(String.format("Patch item with id %d for user with id %d forbidden", id, userId));
         }
 
-        ItemDto dto = ItemMapper.toDto(existItem);
+        ItemDto dto = itemMapper.toDto(existItem);
 
         for (Map.Entry<String, Object> entry : patchValues.entrySet()) {
             try {
@@ -86,47 +95,54 @@ public class ItemServiceImpl implements ItemService {
 
         log.info(String.format("Update item: %s", dto));
 
-        Item item = repository.save(ItemMapper.toModel(dto, user));
+        Item item = itemMapper.toModel(dto, user);
+        if (dto.getRequestId() != null && dto.getRequestId() > 0) {
+            ItemRequest itemRequest = itemRequestRepository.findById(dto.getRequestId())
+                    .orElseThrow(() -> new NotFoundException(String.format("Item request with id %d not found", dto.getRequestId())));
+            item.setRequest(itemRequest);
+        }
 
-        return ItemMapper.toDto(item);
+        return itemMapper.toDto(repository.save(item));
     }
 
     @Override
-    public ItemDto getById(int id, int userId) {
+    public ItemExtraDto getById(int id, int userId) {
         Item item = repository.findById(id)
                 .orElseThrow(() -> new NotFoundException(String.format("Item with id %d not found", id)));
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException(String.format("User with id %d not found", userId)));
 
-        return ItemMapper.toDto(item, getLastBooking(item, user), getNextBooking(item, user),
-                commentRepository.findByItemOrderByCreatedDesc(item));
+        List<CommentDto> comments = commentRepository.findByItemOrderByCreatedDesc(item).stream().map(commentMapper::toDto).collect(Collectors.toList());
+        return itemMapper.toExtraDto(item, getLastBookingDto(item, user), getNextBookingDto(item, user), comments);
     }
 
-    private BookingShortDto getLastBooking(Item item, User user) {
+    private BookingShortDto getLastBookingDto(Item item, User user) {
         if (Objects.equals(item.getOwner(), user)) {
-            return BookingMapper.toShortDto(bookingRepository.findFirstByItemAndStartBeforeAndStatusOrderByStartDesc(item,
+            return bookingMapper.toShortDto(bookingRepository.findFirstByItemAndStartBeforeAndStatusOrderByStartDesc(item,
                     LocalDateTime.now(), BookingStatus.APPROVED));
         }
         return null;
     }
 
-    private BookingShortDto getNextBooking(Item item, User user) {
+    private BookingShortDto getNextBookingDto(Item item, User user) {
         if (Objects.equals(item.getOwner(), user)) {
-            return BookingMapper.toShortDto(bookingRepository.findFirstByItemAndStartAfterAndStatusOrderByStart(item, LocalDateTime.now(),
+            return bookingMapper.toShortDto(bookingRepository.findFirstByItemAndStartAfterAndStatusOrderByStart(item, LocalDateTime.now(),
                     BookingStatus.APPROVED));
         }
         return null;
     }
 
     @Override
-    public List<ItemDto> getAllByUserId(int userId) {
+    public List<ItemExtraDto> getAllByUserId(int userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException(String.format("User with id %d not found", userId)));
 
         return repository.findByOwnerOrderById(user).stream()
-                .map(item -> ItemMapper.toDto(item, getLastBooking(item, user), getNextBooking(item, user),
-                            commentRepository.findByItemOrderByCreatedDesc(item))
+                .map(item -> {
+                            List<CommentDto> comments = commentRepository.findByItemOrderByCreatedDesc(item).stream().map(commentMapper::toDto).collect(Collectors.toList());
+                            return itemMapper.toExtraDto(item, getLastBookingDto(item, user), getNextBookingDto(item, user), comments);
+                        }
                 )
                 .collect(Collectors.toList());
     }
@@ -141,7 +157,7 @@ public class ItemServiceImpl implements ItemService {
         }
 
         return repository.findByNameLikeIgnoreCaseOrDescriptionLikeIgnoreCase(text).stream()
-                .map(ItemMapper::toDto)
+                .map(itemMapper::toDto)
                 .collect(Collectors.toList());
     }
 
@@ -156,9 +172,9 @@ public class ItemServiceImpl implements ItemService {
         bookingRepository.findFirstByItemAndBookerAndStatusAndStartBefore(item, booker, BookingStatus.APPROVED, LocalDateTime.now())
                 .orElseThrow(() -> new BadRequestException(String.format("Can't create comment for item id %d and user id %d", id, userId)));
 
-        Comment comment = CommentMapper.toModel(dto, booker, item);
+        Comment comment = commentMapper.toModel(dto, booker, item);
         log.info(String.format("Create comment %s", comment));
 
-        return CommentMapper.toDto(commentRepository.save(comment));
+        return commentMapper.toDto(commentRepository.save(comment));
     }
 }

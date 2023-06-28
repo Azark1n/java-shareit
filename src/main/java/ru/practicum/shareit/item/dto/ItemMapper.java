@@ -1,44 +1,25 @@
 package ru.practicum.shareit.item.dto;
 
-import lombok.experimental.UtilityClass;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingConstants;
 import ru.practicum.shareit.booking.dto.BookingShortDto;
-import ru.practicum.shareit.item.Comment;
 import ru.practicum.shareit.item.Item;
 import ru.practicum.shareit.user.User;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
-@UtilityClass
-public class ItemMapper {
-    public static ItemDto toDto(Item model, BookingShortDto lastBooking, BookingShortDto nextBooking, List<Comment> comments) {
-        return ItemDto.builder()
-                .id(model.getId())
-                .name(model.getName())
-                .description(model.getDescription())
-                .available(model.getAvailable())
-                .lastBooking(lastBooking)
-                .nextBooking(nextBooking)
-                .comments(comments.stream().map(CommentMapper::toDto).collect(Collectors.toList()))
-                .build();
-    }
+@Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
+public interface ItemMapper {
+    @Mapping(target = "requestId", source = "request.id")
+    ItemDto toDto(Item model);
 
-    public static ItemDto toDto(Item model) {
-        return ItemDto.builder()
-                .id(model.getId())
-                .name(model.getName())
-                .description(model.getDescription())
-                .available(model.getAvailable())
-                .build();
-    }
+    @Mapping(target = "requestId", source = "model.request.id")
+    @Mapping(target = "id", source = "model.id")
+    ItemExtraDto toExtraDto(Item model, BookingShortDto lastBooking, BookingShortDto nextBooking, List<CommentDto> comments);
 
-    public static Item toModel(ItemDto dto, User owner) {
-        return Item.builder()
-                .id(dto.getId())
-                .name(dto.getName())
-                .description(dto.getDescription())
-                .available(dto.getAvailable())
-                .owner(owner)
-                .build();
-    }
+    @Mapping(target = "owner", source = "user")
+    @Mapping(target = "id", source = "dto.id")
+    @Mapping(target = "name", source = "dto.name")
+    Item toModel(ItemDto dto, User user);
 }

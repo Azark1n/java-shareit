@@ -2,6 +2,7 @@ package ru.practicum.shareit.item.service;
 
 import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.item.dto.ItemExtraDto;
 
 import java.util.List;
 import java.util.Map;
@@ -11,9 +12,9 @@ public interface ItemService {
 
     ItemDto patch(int id, int userId, Map<String, Object> patchValues);
 
-    ItemDto getById(int id, int userId);
+    ItemExtraDto getById(int id, int userId);
 
-    List<ItemDto> getAllByUserId(int userId);
+    List<ItemExtraDto> getAllByUserId(int userId);
 
     List<ItemDto> search(String text, int userId);
 
