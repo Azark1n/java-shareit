@@ -42,6 +42,7 @@ public class UserController {
 
     @GetMapping
     public ResponseEntity<Object> getAll() {
+        log.info("Getting all");
         return client.getAll();
     }
 }

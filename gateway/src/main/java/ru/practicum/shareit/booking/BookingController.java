@@ -14,6 +14,8 @@ import javax.validation.Valid;
 import javax.validation.constraints.Positive;
 import javax.validation.constraints.PositiveOrZero;
 
+import static ru.practicum.shareit.Constants.USER_ID_HEADER;
+
 @Slf4j
 @Validated
 @RequiredArgsConstructor
@@ -21,8 +23,6 @@ import javax.validation.constraints.PositiveOrZero;
 @RequestMapping(path = "/bookings")
 public class BookingController {
 	private final BookingClient client;
-
-	private static final String USER_ID_HEADER = "X-Sharer-User-Id";
 
 	@PostMapping
 	public ResponseEntity<Object> create(@RequestHeader(USER_ID_HEADER) int userId, @Valid @RequestBody BookingDto dto) {
@@ -52,6 +52,7 @@ public class BookingController {
 
 		BookingState state = BookingState.from(stateParam)
 				.orElseThrow(() -> new UnsupportedStatusException("Unknown state: " + stateParam));
+		log.info("Getting all by bookerId={}", userId);
 		return client.getAllByBookerAndState(userId, state, from, size);
 	}
 
@@ -63,6 +64,7 @@ public class BookingController {
 
 		BookingState state = BookingState.from(stateParam)
 				.orElseThrow(() -> new UnsupportedStatusException("Unknown state: " + stateParam));
+		log.info("Getting all by ownerId={}", userId);
 		return client.getAllByOwnerAndState(userId, state, from, size);
 	}
 }

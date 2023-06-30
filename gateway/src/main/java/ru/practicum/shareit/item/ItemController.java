@@ -11,13 +11,14 @@ import ru.practicum.shareit.item.dto.ItemDto;
 import javax.validation.Valid;
 import java.util.Map;
 
+import static ru.practicum.shareit.Constants.USER_ID_HEADER;
+
 @Slf4j
 @Value
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/items")
 public class ItemController {
-    private static final String USER_ID_HEADER = "X-Sharer-User-Id";
     ItemClient client;
 
     @PostMapping
@@ -45,6 +46,7 @@ public class ItemController {
 
     @GetMapping
     public ResponseEntity<Object> getAllByUserId(@RequestHeader(USER_ID_HEADER) int userId) {
+        log.info("Getting all by ownerId={}", userId);
         return client.getAllByUserId(userId);
     }
 

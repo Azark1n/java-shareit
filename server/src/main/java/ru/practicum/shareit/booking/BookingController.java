@@ -8,14 +8,14 @@ import ru.practicum.shareit.booking.service.BookingService;
 
 import java.util.List;
 
+import static ru.practicum.shareit.Constants.USER_ID_HEADER;
+
 @Validated
 @RequiredArgsConstructor
 @RestController
 @RequestMapping(path = "/bookings")
 public class BookingController {
     private final BookingService service;
-
-    private static final String USER_ID_HEADER = "X-Sharer-User-Id";
 
     @PostMapping
     public BookingDto create(@RequestHeader(USER_ID_HEADER) int userId, @RequestBody BookingDto dto) {

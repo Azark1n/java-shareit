@@ -11,13 +11,14 @@ import javax.validation.Valid;
 import javax.validation.constraints.Positive;
 import javax.validation.constraints.PositiveOrZero;
 
+import static ru.practicum.shareit.Constants.USER_ID_HEADER;
+
 @Slf4j
 @Validated
 @RequiredArgsConstructor
 @RestController
 @RequestMapping(path = "/requests")
 public class ItemRequestController {
-    private static final String USER_ID_HEADER = "X-Sharer-User-Id";
     private final ItemRequestClient client;
 
     @PostMapping
@@ -28,6 +29,7 @@ public class ItemRequestController {
 
     @GetMapping
     public ResponseEntity<Object> getAllByUserId(@RequestHeader(USER_ID_HEADER) int userId) {
+        log.info("Getting all by userId={}", userId);
         return client.getAllByUserId(userId);
     }
 
@@ -40,6 +42,7 @@ public class ItemRequestController {
     public ResponseEntity<Object> getAll(@RequestHeader(USER_ID_HEADER) int userId,
                                          @PositiveOrZero @RequestParam(name = "from", defaultValue = "0") Integer from,
                                          @Positive @RequestParam(name = "size", defaultValue = "10") Integer size) {
+        log.info("Getting all");
         return client.getAll(userId, from, size);
     }
 }

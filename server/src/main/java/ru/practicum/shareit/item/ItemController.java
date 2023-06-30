@@ -11,12 +11,13 @@ import ru.practicum.shareit.item.service.ItemService;
 import java.util.List;
 import java.util.Map;
 
+import static ru.practicum.shareit.Constants.USER_ID_HEADER;
+
 @Value
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/items")
 public class ItemController {
-    private static final String USER_ID_HEADER = "X-Sharer-User-Id";
     ItemService service;
 
     @PostMapping
