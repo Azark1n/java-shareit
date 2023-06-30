@@ -9,6 +9,8 @@ import ru.practicum.shareit.request.service.ItemRequestService;
 
 import java.util.List;
 
+import static ru.practicum.shareit.Constants.USER_ID_HEADER;
+
 @Validated
 @RequiredArgsConstructor
 @RestController
