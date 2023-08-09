@@ -32,11 +32,13 @@ public class UserController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Object> getById(@PathVariable int id) {
+        log.info("Getting user by Id={}", id);
         return client.getById(id);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Object> deleteById(@PathVariable int id) {
+        log.info("Deleting user by Id={}", id);
         return client.deleteById(id);
     }
 

@@ -41,6 +41,7 @@ public class BookingController {
 
 	@GetMapping("/{bookingId}")
 	public ResponseEntity<Object> get(@RequestHeader(USER_ID_HEADER) int userId, @PathVariable int bookingId) {
+		log.info("Getting booking by Id={}, userId={}", bookingId, userId);
 		return client.getById(bookingId, userId);
 	}
 

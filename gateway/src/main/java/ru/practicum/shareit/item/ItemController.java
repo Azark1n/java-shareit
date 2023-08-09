@@ -35,6 +35,7 @@ public class ItemController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Object> getById(@RequestHeader(USER_ID_HEADER) int userId, @PathVariable int id) {
+        log.info("Getting item by Id={}, userId={}", id, userId);
         return client.getById(id, userId);
     }
 
@@ -52,6 +53,7 @@ public class ItemController {
 
     @GetMapping("/search")
     public ResponseEntity<Object> search(@RequestHeader(USER_ID_HEADER) int userId, @RequestParam(value = "text") String searchText) {
+        log.info("Searching item by text={}, userId={}", searchText, userId);
         return client.search(searchText, userId);
     }
 
